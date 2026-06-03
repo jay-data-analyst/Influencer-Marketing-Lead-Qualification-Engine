@@ -1,0 +1,852 @@
+{
+  "name": "SQL Scraper Final",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -6880,
+        144
+      ],
+      "id": "554d2990-f79f-481d-8120-48efcf826327",
+      "name": "When clicking 'Execute workflow'"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1abuzPbFQ_jLlitL3a8grHAeK-xeGz1Yxns_PqcNplwI",
+          "mode": "list",
+          "cachedResultName": "Bucket A DRR",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1abuzPbFQ_jLlitL3a8grHAeK-xeGz1Yxns_PqcNplwI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 465561745,
+          "mode": "list",
+          "cachedResultName": "Education",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1abuzPbFQ_jLlitL3a8grHAeK-xeGz1Yxns_PqcNplwI/edit#gid=465561745"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -6656,
+        144
+      ],
+      "id": "3e179236-37bc-4a40-aaad-f216bf60f895",
+      "name": "Get row(s) in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "qh9kqlKwE6Q6ItiW",
+          "name": "Google Sheets OAuth2 API"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const output = [];\n\nfor (const item of $input.all()) {\n  const json = item.json;\n\n  const igLink =\n    json.ig_link ||\n    json.ig_handle ||\n    json[\"IG Link\"] ||\n    json[\"Instagram\"] ||\n    json[\"instagram\"] ||\n    json[\"Instagram Link\"] ||\n    json[\"ig link\"] ||\n    \"\";\n\n  let clean = igLink\n    .toString()\n    .trim()\n    .replace(/\\?.*$/, \"\")\n    .replace(/\\/+$/, \"\");\n\n  let handle = \"\";\n\n  if (clean.includes(\"instagram.com\")) {\n    const parts = clean.split(\"/\");\n    handle = parts[parts.length - 1].toLowerCase().trim();\n  } else if (clean.startsWith(\"@\")) {\n    handle = clean.replace(\"@\", \"\").toLowerCase().trim();\n  } else {\n    handle = clean.toLowerCase().trim();\n  }\n\n  handle = handle.replace(\"@\", \"\");\n\n  const invalidHandles = [\"p\", \"reel\", \"stories\", \"explore\", \"accounts\", \"\"];\n\n  const currentStatus = (json.status || \"\")\n    .toString()\n    .trim()\n    .toLowerCase();\n\n  if (currentStatus === \"sql\" || currentStatus === \"not sql\") {\n    output.push({\n      json: {\n        ...json,\n        ig_generated_handle: handle,\n        should_process: false,\n        skip_reason: \"Already processed\"\n      }\n    });\n    continue;\n  }\n\n  if (!handle || invalidHandles.includes(handle)) {\n    output.push({\n      json: {\n        ...json,\n        ig_generated_handle: \"\",\n        should_process: false,\n        skip_reason: \"Invalid Instagram profile link\"\n      }\n    });\n    continue;\n  }\n\n  output.push({\n    json: {\n      ...json,\n      ig_generated_handle: handle,\n      should_process: true,\n      skip_reason: \"\"\n    }\n  });\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6432,
+        144
+      ],
+      "id": "3db61ba3-433f-4109-97f1-e93b5119e8ce",
+      "name": "Code in JavaScript2",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cond-should-process",
+              "leftValue": "={{ $json.should_process }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -6208,
+        144
+      ],
+      "id": "9b0e6637-48f0-4116-bc38-1bb439ca1c23",
+      "name": "If4"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -6000,
+        64
+      ],
+      "id": "8aa9e7db-1242-4138-8046-f45d23db34c9",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\nreturn [\n  {\n    json: {\n      stored_lead_name: item.lead_name || \"\",\n      stored_row_number: item.row_number || \"\",\n      stored_ig_handle: item.ig_generated_handle || \"\",\n      stored_ig_link: item.ig_link || \"\",\n      stored_status: item.status || \"\",\n      ...item\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -5776,
+        64
+      ],
+      "id": "fca768cb-f00f-4809-8cbf-b7a2a09f5226",
+      "name": "Store Lead Data"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/apify~instagram-profile-scraper/runs?token=apify_api_0e2998JmfwEwmA7bEC03oaL1j827Md1Xa87D",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"usernames\": [\"{{ $json.ig_generated_handle }}\"]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -5552,
+        64
+      ],
+      "id": "dc142bfd-1249-4226-81a7-cacd77128c50",
+      "name": "Start Profile Scrape",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json.data;\nconst leadData = $('Store Lead Data').first().json;\n\nreturn [{\n  json: {\n    profile_run_id: data.id,\n    profile_dataset_id: data.defaultDatasetId,\n    stored_lead_name: leadData.stored_lead_name || \"\",\n    stored_row_number: leadData.stored_row_number || \"\",\n    stored_ig_handle: leadData.stored_ig_handle || \"\",\n    stored_ig_link: leadData.stored_ig_link || \"\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -5328,
+        64
+      ],
+      "id": "5a4ce1d7-f489-419b-92b5-45e9669ca94b",
+      "name": "Store Profile Run ID"
+    },
+    {
+      "parameters": {
+        "amount": 20
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -5120,
+        64
+      ],
+      "id": "3b6a3a8c-d32d-4fa4-936c-ca3377a57809",
+      "name": "Wait Profile",
+      "webhookId": "wait-profile-webhook-1"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.apify.com/v2/datasets/{{ $json.profile_dataset_id }}/items?token=apify_api_0e2998JmfwEwmA7bEC03oaL1j827Md1Xa87D",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -4896,
+        64
+      ],
+      "id": "2d5babf5-20ba-4afc-82ec-f145052c9620",
+      "name": "Get Profile Results",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all().map(i => i.json);\nconst runData = $('Store Profile Run ID').first().json;\n\nconst leadName = runData.stored_lead_name || \"\";\nconst rowNumber = runData.stored_row_number || \"\";\nconst igHandle = runData.stored_ig_handle || \"\";\nconst igLink = runData.stored_ig_link || \"\";\n\nlet followers = 0;\nif (items.length > 0) {\n  const profile = items[0];\n  followers =\n    profile.followersCount ||\n    profile.followers ||\n    profile.followersNumber ||\n    profile.edge_followed_by?.count ||\n    0;\n}\n\nreturn [{\n  json: {\n    followers: followers,\n    stored_lead_name: leadName,\n    stored_row_number: rowNumber,\n    stored_ig_handle: igHandle,\n    stored_ig_link: igLink\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -4672,
+        64
+      ],
+      "id": "a9e8bb8a-38cc-437d-b9ed-9087658307d5",
+      "name": "Check Followers",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cond-followers",
+              "leftValue": "={{ $json.followers }}",
+              "rightValue": 6000,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -4448,
+        64
+      ],
+      "id": "5025e95c-0d58-40fa-8b8d-0a75e8d2e2b8",
+      "name": "If Followers >= 6000"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\n\nreturn [{\n  json: {\n    lead_name: data.stored_lead_name,\n    row_number: data.stored_row_number,\n    ig_generated_handle: data.stored_ig_handle,\n    status: \"Not SQL\",\n    collab_count: 0,\n    followers: data.followers,\n    checked_date: new Date().toISOString().split(\"T\")[0],\n    skip_reason: `Low followers: ${data.followers}`\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -4240,
+        240
+      ],
+      "id": "64103aae-cde1-4ff4-89df-c2e42ecad226",
+      "name": "Mark Low Followers",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/apify~instagram-reel-scraper/runs?memory=1024&token=apify_api_0e2998JmfwEwmA7bEC03oaL1j827Md1Xa87D",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"username\": [\"{{ $json.stored_ig_handle }}\"],\n  \"resultsLimit\": 20\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -4240,
+        -64
+      ],
+      "id": "d2df28e4-ae1b-43ed-9003-24e43799d547",
+      "name": "HTTP Request2",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const apifyData = $input.first().json.data;\nconst profileData = $('Check Followers').first().json;\n\nreturn [{\n  json: {\n    stored_lead_name: profileData.stored_lead_name || \"\",\n    stored_row_number: profileData.stored_row_number || \"\",\n    stored_ig_handle: profileData.stored_ig_handle || \"\",\n    stored_followers: profileData.followers || 0,\n    stored_run_id: apifyData.id,\n    stored_dataset_id: apifyData.defaultDatasetId\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -4016,
+        -64
+      ],
+      "id": "ffff7954-f57d-4008-97b0-b392611e4d00",
+      "name": "Store Run ID",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.apify.com/v2/acts/apify~instagram-reel-scraper/runs/{{ $json.stored_run_id }}?token=apify_api_0e2998JmfwEwmA7bEC03oaL1j827Md1Xa87D",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -3792,
+        -64
+      ],
+      "id": "ec21751f-26fc-4c26-8e73-5548aa2c18a8",
+      "name": "Check Apify Status1",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -3568,
+        -64
+      ],
+      "id": "c6ed4269-9690-441d-be56-0092269aeac8",
+      "name": "Wait2",
+      "webhookId": "wait-reel-webhook-1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const pollingData = $input.first().json;\n\nconst runStatus = pollingData.status || pollingData.data?.status || \"RUNNING\";\n\nconst storedRunId = $('Store Run ID').first().json.stored_run_id;\nconst storedDatasetId = $('Store Run ID').first().json.stored_dataset_id;\nconst storedLeadName = $('Store Run ID').first().json.stored_lead_name;\nconst storedRowNumber = $('Store Run ID').first().json.stored_row_number;\nconst storedIgHandle = $('Store Run ID').first().json.stored_ig_handle;\nconst storedFollowers = $('Store Run ID').first().json.stored_followers;\n\nreturn [{\n  json: {\n    run_status: runStatus,\n    stored_run_id: storedRunId,\n    stored_dataset_id: storedDatasetId,\n    stored_lead_name: storedLeadName,\n    stored_row_number: storedRowNumber,\n    stored_ig_handle: storedIgHandle,\n    stored_followers: storedFollowers\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3360,
+        -64
+      ],
+      "id": "10ecf68c-7949-43aa-aaa9-202b7bf56874",
+      "name": "Get Latest Status",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cond-status-1",
+              "leftValue": "={{ $json.run_status }}",
+              "rightValue": "SUCCEEDED",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -3136,
+        -64
+      ],
+      "id": "67099ec6-e043-4fd4-bb02-197dd3e111fc",
+      "name": "If5"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.apify.com/v2/datasets/{{ $json.stored_dataset_id }}/items?token=apify_api_0e2998JmfwEwmA7bEC03oaL1j827Md1Xa87D",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2912,
+        -64
+      ],
+      "id": "789d23da-af47-41aa-a007-a8ccd01ccf09",
+      "name": "HTTP Request3",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n  const allItems = $input.all().map(i => i.json);\n\n  const storedData = $('Store Run ID').first().json;\n  const leadName = storedData.stored_lead_name || \"\";\n  const rowNumber = storedData.stored_row_number || \"\";\n  const igHandle = storedData.stored_ig_handle || \"\";\n  const followers = storedData.stored_followers || 0;\n\n  let collabCount = 0;\n  let reelCount = 0;\n\n  // ✅ Caption signals — actual paid partnership language\n  const captionSignals = [\n    \"paid partnership\",\n    \"paid collaboration\",\n    \"gifted by\",\n    \"gifted from\",\n    \"in collaboration with\",\n    \"in association with\",\n    \"sponsored by\",\n    \"partnered with\",\n    \"#ad\",\n    \"#paidpartnership\",\n    \"#paidcollaboration\",\n    \"#sponsored\",\n    \"#gifted\",\n    \"#brandambassador\",\n    \"#collab\",\n    \"#promotion\"\n  ];\n\n  // ✅ Hashtag signals — unambiguous paid marketing tags\n  const signalHashtags = [\n    \"ad\",\n    \"paidpartnership\",\n    \"paidcollaboration\",\n    \"brandambassador\",\n    \"gifted\",\n    \"sponsored\",\n    \"collab\",\n    \"promotion\",\n    \"partner\",\n    \"brandpartner\",\n    \"paid\"\n  ];\n\n  for (const item of allItems) {\n\n    if (!item.caption && !item.hashtags && !item.type) continue;\n\n    const mediaType = (item.type || \"\").toLowerCase();\n    const isReel =\n      mediaType === \"video\" ||\n      mediaType === \"graphvideo\" ||\n      mediaType.includes(\"video\");\n\n    if (!isReel) continue;\n\n    reelCount++;\n\n    const caption = (item.caption || \"\").toLowerCase();\n    const hasCaption = captionSignals.some(s => caption.includes(s));\n\n    const hashtagArray = (item.hashtags || []).map(h => h.toLowerCase());\n    const hasHashtag = hashtagArray.some(h => signalHashtags.includes(h));\n\n    // ✅ Most reliable — Instagram's own paid label\n    const hasPaidPartnership = item.isPaidPartnership === true;\n\n    // ✅ coauthorProducers check\n    let hasCoauthor = false;\n    if (Array.isArray(item.coauthorProducers) && item.coauthorProducers.length > 0) {\n      hasCoauthor = true;\n    }\n    if (!hasCoauthor) {\n      const flatKeys = Object.keys(item);\n      hasCoauthor = flatKeys.some(key => key.startsWith(\"coauthorProducers.\"));\n    }\n\n    // ✅ KEY FIX: coauthorProducers alone is NOT enough\n    // It only counts as a collab when COMBINED with a caption/hashtag signal\n    // OR when isPaidPartnership is true\n    // This filters out colleges/content teams tagging their own sub-accounts\n    const isRealCollab =\n  hasPaidPartnership ||\n  hasCaption ||\n  hasHashtag ||\n  hasCoauthor;  // Instagram Collab post counts on its own\n\n    if (isRealCollab) {\n      collabCount++;\n    }\n  }\n\n  if (reelCount === 0) {\n    return [{\n      json: {\n        lead_name: leadName,\n        row_number: rowNumber,\n        ig_generated_handle: igHandle,\n        status: \"Not SQL\",\n        collab_count: 0,\n        followers: followers,\n        checked_date: new Date().toISOString().split(\"T\")[0],\n        skip_reason: \"No reels found on profile\"\n      }\n    }];\n  }\n\n  return [{\n    json: {\n      lead_name: leadName,\n      row_number: rowNumber,\n      ig_generated_handle: igHandle,\n      status: collabCount >= 3 ? \"SQL\" : \"Not SQL\",\n      collab_count: collabCount,\n      followers: followers,\n      checked_date: new Date().toISOString().split(\"T\")[0],\n      skip_reason: collabCount < 3 ? `Only ${collabCount} collab signals found` : \"\"\n    }\n  }];\n\n} catch (e) {\n  const storedData = $('Store Run ID').first().json;\n  return [{\n    json: {\n      lead_name: storedData.stored_lead_name || \"\",\n      row_number: storedData.stored_row_number || \"\",\n      ig_generated_handle: storedData.stored_ig_handle || \"\",\n      status: \"Not SQL\",\n      collab_count: 0,\n      checked_date: new Date().toISOString().split(\"T\")[0],\n      skip_reason: `Error: ${e.message}`\n    }\n  }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2688,
+        -64
+      ],
+      "id": "8d3d43d2-0d85-489c-a74c-3126eb58c7d3",
+      "name": "Code in JavaScript3",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1abuzPbFQ_jLlitL3a8grHAeK-xeGz1Yxns_PqcNplwI",
+          "mode": "list",
+          "cachedResultName": "Bucket A DRR",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1abuzPbFQ_jLlitL3a8grHAeK-xeGz1Yxns_PqcNplwI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 465561745,
+          "mode": "list",
+          "cachedResultName": "Education",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1abuzPbFQ_jLlitL3a8grHAeK-xeGz1Yxns_PqcNplwI/edit#gid=465561745"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "lead_name": "={{ $json.lead_name }}",
+            "status": "={{ $json.status }}",
+            "collab_count": "={{ $json.collab_count }}",
+            "Date": "=",
+            "checked_date": "={{ $json.checked_date }}",
+            "skip_reason": "={{ $json.skip_reason }}"
+          },
+          "matchingColumns": [
+            "lead_name"
+          ],
+          "schema": [
+            {
+              "id": "lead_name",
+              "displayName": "lead_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "# Employees",
+              "displayName": "# Employees",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Industry",
+              "displayName": "Industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company Linkedin Url",
+              "displayName": "Company Linkedin Url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ig_link",
+              "displayName": "ig_link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ig_generated_handle",
+              "displayName": "ig_generated_handle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "collab_count",
+              "displayName": "collab_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reserved",
+              "displayName": "Reserved",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "checked_date",
+              "displayName": "checked_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "skip_reason",
+              "displayName": "skip_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -2480,
+        80
+      ],
+      "id": "2202026d-204a-4cb6-9edb-db71aab680b2",
+      "name": "Update row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "qh9kqlKwE6Q6ItiW",
+          "name": "Google Sheets OAuth2 API"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "If4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If4": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Store Lead Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Lead Data": {
+      "main": [
+        [
+          {
+            "node": "Start Profile Scrape",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Profile Scrape": {
+      "main": [
+        [
+          {
+            "node": "Store Profile Run ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Store Profile Run ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Profile Run ID": {
+      "main": [
+        [
+          {
+            "node": "Wait Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Profile": {
+      "main": [
+        [
+          {
+            "node": "Get Profile Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Profile Results": {
+      "main": [
+        [
+          {
+            "node": "Check Followers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Followers": {
+      "main": [
+        [
+          {
+            "node": "If Followers >= 6000",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Followers >= 6000": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Low Followers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Low Followers": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Store Run ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Run ID": {
+      "main": [
+        [
+          {
+            "node": "Check Apify Status1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Apify Status1": {
+      "main": [
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "Get Latest Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Latest Status": {
+      "main": [
+        [
+          {
+            "node": "If5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If5": {
+      "main": [
+        [
+          {
+            "node": "Check Apify Status1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0b274050-84f5-4569-968f-852004afe70b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5455eca70a1e25a6cc25146baf4d828b2718cadb3a55fe7483b6545d46b23a81"
+  },
+  "id": "tF4Efu3SMsBs6zjZ",
+  "tags": []
+}
