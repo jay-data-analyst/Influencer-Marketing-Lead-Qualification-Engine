@@ -122,7 +122,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.apify.com/v2/acts/apify~instagram-profile-scraper/runs?token=apify_api_0e2998JmfwEwmA7bEC03oaL1j827Md1Xa87D",
+        "url": "https://api.apify.com/v2/acts/apify~instagram-profile-scraper/runs?token=apify****************************",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"usernames\": [\"{{ $json.ig_generated_handle }}\"]\n}",
@@ -168,7 +168,7 @@
     },
     {
       "parameters": {
-        "url": "=https://api.apify.com/v2/datasets/{{ $json.profile_dataset_id }}/items?token=apify_api_0e2998JmfwEwmA7bEC03oaL1j827Md1Xa87D",
+        "url": "=https://api.apify.com/v2/datasets/{{ $json.profile_dataset_id }}/items?token=apify_api_0e2998JmfwEwmA7bEC03oaL1j827Md",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -247,7 +247,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.apify.com/v2/acts/apify~instagram-reel-scraper/runs?memory=1024&token=apify_api_0e2998JmfwEwmA7bEC03oaL1j827Md1Xa87D",
+        "url": "https://api.apify.com/v2/acts/apify~instagram-reel-scraper/runs?memory=1024&token=apify_api_************************",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"username\": [\"{{ $json.stored_ig_handle }}\"],\n  \"resultsLimit\": 20\n}",
@@ -280,7 +280,7 @@
     },
     {
       "parameters": {
-        "url": "=https://api.apify.com/v2/acts/apify~instagram-reel-scraper/runs/{{ $json.stored_run_id }}?token=apify_api_0e2998JmfwEwmA7bEC03oaL1j827Md1Xa87D",
+        "url": "=https://api.apify.com/v2/acts/apify~instagram-reel-scraper/runs/{{ $json.stored_run_id }}?token=apify**************************",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -356,7 +356,7 @@
     },
     {
       "parameters": {
-        "url": "=https://api.apify.com/v2/datasets/{{ $json.stored_dataset_id }}/items?token=apify_api_0e2998JmfwEwmA7bEC03oaL1j827Md1Xa87D",
+        "url": "=https://api.apify.com/v2/datasets/{{ $json.stored_dataset_id }}/items?token=apify**************************",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
